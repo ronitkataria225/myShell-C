@@ -21,7 +21,9 @@ int isExecutable(char *input, char *tempPath, char *candidatePath, char *candida
 }
 
 int main(int argc, char *argv[]) {
-  (stdout, NULL);// Flush after every printfsetbuf
+  // Flush after every printf
+  setbuf(stdout, NULL);
+  char cwd[1024];
   char input[100];
   char echo[] = "echo ";
   char *env_path = getenv("PATH");
@@ -43,13 +45,14 @@ int main(int argc, char *argv[]) {
 
   while (1) {
     input[0] = '\0';
+    candidatePath[0] = '\0';
     strcpy(tempPath, path);
     printf("$ ");
     fgets(input, sizeof(input), stdin);
     input[strlen(input) - 1] = '\0'; // fets() also counts the enter('\n') input when done with a line, so it also prints the newline when writing the input onto the screen
     int firstSpace = strcspn(input, " ");
     strncpy(firstExec, input, firstSpace);
-    firstExec[firstSpace + 1] = '\0';
+    firstExec[firstSpace] = '\0';
     if (strcmp(input, "exit") == 0) {
       return 0;
     }
@@ -59,11 +62,16 @@ int main(int argc, char *argv[]) {
       printf("%s\n", input + 5);
     }
 
+    else if (strcmp(input, "pwd") == 0) {
+      getcwd(cwd, sizeof(cwd));
+      printf("%s\n", cwd);
+    }
+
     else if (strncmp(input, "type ", 5) == 0) {
       typeFound = 0;
 
       if (strcmp(input + 5, "exit") == 0 || strcmp(input + 5, "echo") == 0 ||
-          strcmp(input + 5, "type") == 0) {
+          strcmp(input + 5, "type") == 0 || strcmp(input + 5, "pwd") == 0) {
         printf("%s is a shell builtin\n", input + 5);
         typeFound = 1;
       }
