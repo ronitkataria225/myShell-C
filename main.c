@@ -22,8 +22,6 @@ int isExecutable(char *input, char *tempPath, char *candidatePath,
   return 0;
 }
 
-void ifQuotes() {}
-
 int main(int argc, char *argv[]) {
   setbuf(stdout, NULL); // recheck
   char cwd[1024];
@@ -42,9 +40,14 @@ int main(int argc, char *argv[]) {
   char localHome[100];
   char quotedText[100];
   char quotedBuffer[100];
+  int firstArg;
   if (!env_path) {
     return 1;
   }
+  int firstDelim;
+  char exeArg[100];
+  int k;
+  int l;
 
   char path[4096]; // store the $PATH stuff for local usage and modification
   char firstExec[100];
@@ -53,7 +56,13 @@ int main(int argc, char *argv[]) {
   snprintf(localHome, sizeof(localHome), "%s", home);
 
   while (1) {
+    firstArg = 0;
+    firstExec[0] = '\0';
+    firstDelim = 0;
     input[0] = '\0';
+    k = 0;
+    l = 0;
+    exeArg[0] = '\0';
     candidatePath[0] = '\0';
     strcpy(tempPath, path);
     printf("$ ");
@@ -62,13 +71,48 @@ int main(int argc, char *argv[]) {
         '\0'; // fets() also counts the enter('\n') input when done with a line,
               // so it also prints the newline when writing the input onto the
               // screen
-    int firstSpace = strcspn(input, " ");
-    strncpy(firstExec, input, firstSpace);
-    firstExec[firstSpace] = '\0';
+    //'exe space' arg1
+    // firstDelim = 9;
+    // exe
+    // firstDelim = 10;
+    // exe space\0
+    if (input[0] == '\'') {
+      firstDelim = strcspn(input + 1, "\'");
+      strncpy(firstExec, input + 1, firstDelim);
+      // printf("%d", firstDelim);
+      firstArg = firstDelim + 2;
+    } else if (input[0] == '\"') {
+      firstDelim = strcspn(input + 1, "\"");
+      strncpy(firstExec, input + 1, firstDelim);
+      // printf("%d", firstDelim);
+      firstArg = firstDelim + 3;
+    } else {
+      firstDelim = strcspn(input, " ");
+      strncpy(firstExec, input, firstDelim);
+      // printf("%d", firstDelim);
+      firstArg = firstDelim + 1;
+    }
+    firstExec[firstDelim] = '\0';
+    while (firstExec[k] != '\0') {
+      if (firstExec[k] == '\\') {
+        exeArg[l] = firstExec[k + 1];
+        // printf("in loop: %s\n", exeArg);
+        l++;
+        k += 2;
+        // printf("exeArg[k] = %c", firstExec[k]);
+        continue;
+      }
+      exeArg[l] = firstExec[k];
+      k++;
+      l++;
+    }
+    exeArg[l] = '\0';
+    int exeLen = strlen(exeArg);
+
     if (strcmp(input, "exit") == 0) {
       return 0;
     }
-
+    //'google' fa
     // Better coding practice
     else if (strncmp(input, echo, 5) == 0) {
       int j = 5;
@@ -151,6 +195,7 @@ int main(int argc, char *argv[]) {
       quotedText[i] = '\0';
       // printf("%d | %d\n", quote, doubleQuote);
       printf("%s\n", quotedText);
+      continue;
     }
 
     else if (strncmp(input, "cat ", 4) == 0) {
@@ -319,11 +364,14 @@ int main(int argc, char *argv[]) {
         printf("%s: not found\n", input + 5);
       }
     }
-
-    else if (isExecutable(input, tempPath, candidatePath, firstExec)) {
-      // printf("%s is an executable firstExec\n", firstExec);
-      char *myPath = strtok(input, " ");
-      int i = 0;
+    //'ls'
+    else if (isExecutable(input, tempPath, candidatePath, exeArg)) {
+      // printf("%s is an executable exeArg\n", exeArg);
+      char *myPath = strtok(input + firstArg, " ");
+      int i = 1;
+      //'exe  /' with  space' /tmp/cow/f1
+      //'exe  '
+      args[0] = strdup(exeArg);
       while (myPath != NULL) {
         // printf("enterd while\n");
         args[i] = myPath;
