@@ -6,8 +6,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-int isExecutable(char *input, char *tempPath, char *candidatePath,
-                 char *candidate) {
+int isExecutable(char *input, char *tempPath, char *candidatePath, char *candidate) {
   char *myPath = strtok(tempPath, ":");
   while (myPath != NULL) {
     strcpy(candidatePath, myPath);
@@ -25,8 +24,7 @@ int isExecutable(char *input, char *tempPath, char *candidatePath,
 void ifQuotes() {}
 
 int main(int argc, char *argv[]) {
-  // Flush after every printf
-  setbuf(stdout, NULL);
+  setbuf(stdout, NULL); // recheck
   char cwd[1024];
   char input[100];
   char echo[] = "echo ";
@@ -72,14 +70,28 @@ int main(int argc, char *argv[]) {
       int j = 5;
       int i = 0;
       int quote = 0;
+      int doubleQuote = 0;
       quotedText[0] = '\0';
+      //"ronit's bag"
+      //'ronit"s bag'
+      int inQuote = 0;
       while (input[j] != '\0') {
-        if (input[j] == '\'') {
+        if (input[j] == '\'' && doubleQuote == 0) {
           quote = 1;
+          inQuote = !inQuote;
           j++;
           continue;
         }
-        if (quote == 0 && input[j] == ' ' && input[j + 1] == ' ') {
+        if (input[j] == '\"' && quote == 0) {
+          inQuote = !inQuote;
+          doubleQuote = 1;
+          j++;
+          continue;
+        }
+        if (input[j] == ' ' && doubleQuote == 0 && quote == 0) {
+          doubleQuote = 0;
+        }
+        if (input[j] == ' ' && input[j + 1] == ' ' && inQuote == 0) {
           j++;
           continue;
         }
@@ -96,29 +108,51 @@ int main(int argc, char *argv[]) {
       int i = 0;
       int x = 1;
       int quote = 0;
+      int doubleQuote = 0;
       args[0] = "cat";
       quotedBuffer[0] = '\0';
       // 'file1' file2\0
       // cat '/tmp/bee/f   61' '/tmp/bee/f   88' '/tmp/bee/f   22'
+      //"ronit's bag"
       while (input[j] != '\0') {
-        if (quote == 1 && input[j] == '\'') {
+        if ((quote == 1 && input[j] == '\'') ||
+            (doubleQuote == 1 && input[j] == '\"')) {
           quotedBuffer[i] = '\0';
           args[x] = strdup(quotedBuffer);
           x++;
           quote = 0;
+          doubleQuote = 0;
           j++;
           quotedBuffer[0] = '\0';
           i = 0;
           continue;
         }
-        if (input[j] == '\'') {
+        if (input[j] == '\'' && doubleQuote == 0) {
           quote = 1;
           j++;
           continue;
         }
-        // file1 file2
-        if (quote == 0 && input[j] == ' ') {
-          if (input[j + 1] == ' ' || input[j + 1] == '\'') {
+        if (input[j] == '\"' && quote == 0) {
+          doubleQuote = 1;
+          j++;
+          continue;
+        }
+        if (input[j] == '\'' && doubleQuote == 1) {
+          quotedBuffer[i] = input[j];
+          i++;
+          j++;
+          continue;
+        }
+        if (input[j] == '\"' && quote == 1) {
+          quotedBuffer[i] = input[j];
+          i++;
+          j++;
+          continue;
+        }
+        // file1 'file2'
+        if (quote == 0 && input[j] == ' ' && doubleQuote == 0) {
+          if (input[j + 1] == ' ' || input[j + 1] == '\'' ||
+              input[j + 1] == '\"') {
             j++;
             continue;
           }
