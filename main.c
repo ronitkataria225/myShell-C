@@ -22,6 +22,8 @@ int isExecutable(char *input, char *tempPath, char *candidatePath,
   return 0;
 }
 
+void ifQuotes() {}
+
 int main(int argc, char *argv[]) {
   // Flush after every printf
   setbuf(stdout, NULL);
@@ -39,7 +41,8 @@ int main(int argc, char *argv[]) {
   char username[100];
   char *home = getenv("HOME");
   char localHome[100];
-
+  char quotedText[100];
+  char quotedBuffer[100];
   if (!env_path) {
     return 1;
   }
@@ -66,7 +69,90 @@ int main(int argc, char *argv[]) {
 
     // Better coding practice
     else if (strncmp(input, echo, 5) == 0) {
-      printf("%s\n", input + 5);
+      int j = 5;
+      int i = 0;
+      int quote = 0;
+      quotedText[0] = '\0';
+      while (input[j] != '\0') {
+        if (input[j] == '\'') {
+          quote = 1;
+          j++;
+          continue;
+        }
+        if (quote == 0 && input[j] == ' ' && input[j + 1] == ' ') {
+          j++;
+          continue;
+        }
+        quotedText[i] = input[j];
+        i++;
+        j++;
+      }
+      quotedText[i] = '\0';
+      printf("%s\n", quotedText);
+    }
+
+    else if (strncmp(input, "cat ", 4) == 0) {
+      int j = 4;
+      int i = 0;
+      int x = 1;
+      int quote = 0;
+      args[0] = "cat";
+      quotedBuffer[0] = '\0';
+      // 'file1' file2\0
+      // cat '/tmp/bee/f   61' '/tmp/bee/f   88' '/tmp/bee/f   22'
+      while (input[j] != '\0') {
+        if (quote == 1 && input[j] == '\'') {
+          quotedBuffer[i] = '\0';
+          args[x] = strdup(quotedBuffer);
+          x++;
+          quote = 0;
+          j++;
+          quotedBuffer[0] = '\0';
+          i = 0;
+          continue;
+        }
+        if (input[j] == '\'') {
+          quote = 1;
+          j++;
+          continue;
+        }
+        // file1 file2
+        if (quote == 0 && input[j] == ' ') {
+          if (input[j + 1] == ' ' || input[j + 1] == '\'') {
+            j++;
+            continue;
+          }
+          quotedBuffer[i] = '\0';
+          args[x] = strdup(quotedBuffer);
+          x++;
+          j++;
+          quotedBuffer[0] = '\0';
+          i = 0;
+          continue;
+        }
+
+        quotedBuffer[i] = input[j];
+        i++;
+        j++;
+        if (input[j] == '\0') {
+          args[1] = strdup(quotedBuffer);
+          x++;
+        }
+      }
+      args[x] = NULL;
+      pid_t pid = fork();
+      if (pid < 0) {
+        perror("Fork Failed:");
+        return 1;
+      } else if (pid == 0) {
+        if (execv("/usr/bin/cat", args) == -1) {
+          perror("Execution Failed");
+        }
+        exit(EXIT_FAILURE);
+      } else {
+        int status;
+        waitpid(pid, &status, 0);
+      }
     }
 
     else if (strcmp(input, "pwd") == 0) {
