@@ -80,26 +80,62 @@ int main(int argc, char *argv[]) {
       //'ronit"s bag'
       int inQuote = 0;
       while (input[j] != '\0') {
-        if (input[j] == '\'' && doubleQuote == 0) {
-          quote = 1;
-          inQuote = !inQuote;
-          j++;
-          continue;
+        if (quote == 1) {
+          if (input[j] == '\"') {
+            quotedText[i] = input[j];
+            j++;
+            i++;
+            continue;
+          }
+          if (input[j] == '\'') {
+            j++;
+            quote = 0;
+            continue;
+          }
         }
-        if (input[j] == '\"' && quote == 0) {
-          inQuote = !inQuote;
-          doubleQuote = 1;
-          j++;
-          continue;
+
+        else {
+          if (input[j] == '\"') {
+            inQuote = !inQuote;
+            doubleQuote = 1;
+            j++;
+            continue;
+          }
         }
-        if (input[j] == ' ' && doubleQuote == 0 && quote == 0) {
-          doubleQuote = 0;
+
+        if (doubleQuote == 1) {
+          if (input[j] == '\'') {
+            quotedText[i] = input[j];
+            j++;
+            i++;
+            continue;
+          }
+          if (input[j] == '\"') {
+            doubleQuote = 0;
+            j++;
+            continue;
+          }
+          if (input[j] == '\\') {
+            j++;
+            quotedText[i] = input[j];
+            i++;
+            j++;
+            continue;
+          }
+        } else {
+          if (input[j] == '\'') {
+            inQuote = !inQuote;
+            quote = 1;
+            j++;
+            continue;
+          }
         }
-        if (input[j] == ' ' && input[j + 1] == ' ' && inQuote == 0) {
-          j++;
-          continue;
-        }
+        // echo "world  hello"  "shell""test"
         if (!inQuote) {
+          if (input[j] == ' ' && input[j + 1] == ' ') {
+            j++;
+            continue;
+          }
           if (input[j] == '\\') {
             j++;
             quotedText[i] = input[j];
@@ -113,6 +149,7 @@ int main(int argc, char *argv[]) {
         j++;
       }
       quotedText[i] = '\0';
+      // printf("%d | %d\n", quote, doubleQuote);
       printf("%s\n", quotedText);
     }
 
@@ -151,6 +188,13 @@ int main(int argc, char *argv[]) {
         }
         if (doubleQuote == 1) {
           if (input[j] == '\'') {
+            quotedBuffer[i] = input[j];
+            i++;
+            j++;
+            continue;
+          }
+          if (input[j] == '\\') {
+            j++;
             quotedBuffer[i] = input[j];
             i++;
             j++;
