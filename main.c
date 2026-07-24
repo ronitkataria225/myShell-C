@@ -6,7 +6,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-int isExecutable(char *input, char *tempPath, char *candidatePath, char *candidate) {
+int isExecutable(char *input, char *tempPath, char *candidatePath,
+                 char *candidate) {
   char *myPath = strtok(tempPath, ":");
   while (myPath != NULL) {
     strcpy(candidatePath, myPath);
@@ -57,7 +58,10 @@ int main(int argc, char *argv[]) {
     strcpy(tempPath, path);
     printf("$ ");
     fgets(input, sizeof(input), stdin);
-    input[strlen(input) - 1] = '\0'; // fets() also counts the enter('\n') input when done with a line, so it also prints the newline when writing the input onto the screen
+    input[strlen(input) - 1] =
+        '\0'; // fets() also counts the enter('\n') input when done with a line,
+              // so it also prints the newline when writing the input onto the
+              // screen
     int firstSpace = strcspn(input, " ");
     strncpy(firstExec, input, firstSpace);
     firstExec[firstSpace] = '\0';
@@ -95,6 +99,15 @@ int main(int argc, char *argv[]) {
           j++;
           continue;
         }
+        if (!inQuote) {
+          if (input[j] == '\\') {
+            j++;
+            quotedText[i] = input[j];
+            i++;
+            j++;
+            continue;
+          }
+        }
         quotedText[i] = input[j];
         i++;
         j++;
@@ -109,70 +122,105 @@ int main(int argc, char *argv[]) {
       int x = 1;
       int quote = 0;
       int doubleQuote = 0;
+      int inQuote = 0;
+      int p = 0;
       args[0] = "cat";
       quotedBuffer[0] = '\0';
       // 'file1' file2\0
       // cat '/tmp/bee/f   61' '/tmp/bee/f   88' '/tmp/bee/f   22'
+      // cat /tmp/dog/\_ignored_2 /tmp/dog/ignore_\18 /tmp/dog/just_one_\\_92
       //"ronit's bag"
       while (input[j] != '\0') {
-        if ((quote == 1 && input[j] == '\'') ||
-            (doubleQuote == 1 && input[j] == '\"')) {
-          quotedBuffer[i] = '\0';
-          args[x] = strdup(quotedBuffer);
-          x++;
-          quote = 0;
-          doubleQuote = 0;
-          j++;
-          quotedBuffer[0] = '\0';
-          i = 0;
-          continue;
-        }
-        if (input[j] == '\'' && doubleQuote == 0) {
-          quote = 1;
-          j++;
-          continue;
-        }
-        if (input[j] == '\"' && quote == 0) {
-          doubleQuote = 1;
-          j++;
-          continue;
-        }
-        if (input[j] == '\'' && doubleQuote == 1) {
-          quotedBuffer[i] = input[j];
-          i++;
-          j++;
-          continue;
-        }
-        if (input[j] == '\"' && quote == 1) {
-          quotedBuffer[i] = input[j];
-          i++;
-          j++;
-          continue;
-        }
-        // file1 'file2'
-        if (quote == 0 && input[j] == ' ' && doubleQuote == 0) {
-          if (input[j + 1] == ' ' || input[j + 1] == '\'' ||
-              input[j + 1] == '\"') {
+        if (quote == 1) {
+          if (input[j] == '\"') {
+            quotedBuffer[i] = input[j];
+            i++;
             j++;
             continue;
           }
-          quotedBuffer[i] = '\0';
-          args[x] = strdup(quotedBuffer);
-          x++;
+          if (input[j] == '\'') {
+            quotedBuffer[i] = '\0';
+            j++;
+            args[x] = strdup(quotedBuffer);
+            x++;
+            quote = 0;
+            i = 0;
+            quotedBuffer[0] == '\0';
+            continue;
+          }
+        }
+        if (doubleQuote == 1) {
+          if (input[j] == '\'') {
+            quotedBuffer[i] = input[j];
+            i++;
+            j++;
+            continue;
+          }
+          if (input[j] == '\"') {
+            quotedBuffer[i] = '\0';
+            j++;
+            args[x] = strdup(quotedBuffer);
+            x++;
+            doubleQuote = 0;
+            i = 0;
+            quotedBuffer[0] = '\0';
+            continue;
+          }
+        }
+
+        if (doubleQuote == 0 && input[j] == '\'') { // outside "" found a '
+          quote = 1;
           j++;
-          quotedBuffer[0] = '\0';
-          i = 0;
+          quotedBuffer[i] = input[j];
+          i++;
+          j++;
           continue;
+        }
+
+        if (quote == 0 && input[j] == '\"') {
+          doubleQuote = 1;
+          j++;
+          quotedBuffer[i] = input[j];
+          i++;
+          j++;
+          continue;
+        }
+
+        if (doubleQuote == 0 && quote == 0) {
+          if (input[j] == ' ') {
+            if (input[j - 1] != '\'' && input[j - 1] != '\"') {
+              quotedBuffer[i] = '\0';
+              args[x] = strdup(quotedBuffer);
+              x++;
+              quotedBuffer[0] = '\0';
+              i = 0;
+              j++;
+              continue;
+            }
+            j++; // incase it's an unquoted path
+            continue;
+          }
+          if (input[j] == '\\') {
+            j++;
+            quotedBuffer[i] = input[j];
+            i++;
+            j++;
+            continue;
+          }
         }
 
         quotedBuffer[i] = input[j];
         i++;
         j++;
         if (input[j] == '\0') {
-          args[1] = strdup(quotedBuffer);
+          quotedBuffer[i] = '\0';
+          args[x] = strdup(quotedBuffer);
           x++;
         }
       }
+      // for(int k = 0; k<x; k++){
+      //   printf("[%s]", args[k]);
+      // }
       args[x] = NULL;
       pid_t pid = fork();
       if (pid < 0) {
