@@ -1,17 +1,6 @@
-#include <dirent.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include "command.h"
-#include "lexer.h"
-//#include "parser.h"
-#include "builtins.h"
-#include "executor.h"
+#include "headers.h"
 
-void lexer(char* input, struct command *cmd){
+void lexer(char* input, struct command *cmd){ 
     int i = 0;
     int j = 0;
     int inSingle = 0;
@@ -20,7 +9,9 @@ void lexer(char* input, struct command *cmd){
     cmd->argc = 0;
     while (input[j] != '\0'){
         //echo   hello
+        //echo \'\"example shell\"\'
         if(input[j] == '\\'){
+            //(!inSingle && !inDouble && (input[j+1] == '\"' || input[j+1] == '\'' || input[j+1] == '\\' || input[j+1] == '$' || input[j+1] == '`' || input[j+1] == ' ')
             if(!inSingle && !inDouble){
                 j++;
                 argBuffer[i] = input[j];
@@ -51,6 +42,7 @@ void lexer(char* input, struct command *cmd){
                     j++;
                     continue;
                 }
+                continue;
             }
         }
         if(input[j] == '\''){
@@ -92,6 +84,7 @@ void lexer(char* input, struct command *cmd){
     }
     cmd->args[cmd->argc] = NULL;
     // for(int a = 0; a < cmd->argc; a++){
+    //     printf("LEX\n");
     //     printf("%s\n", cmd->args[a]);
     // }
 }

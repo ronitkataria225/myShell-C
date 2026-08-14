@@ -1,0 +1,30 @@
+helo
+2
+3
+cat history.txt 
+exit
+echo asd
+echo asdsa
+echo asd
+echo akjb
+ls
+cd ~/codecrafters-shell-c/src/
+cd ..
+ls
+cd ..
+ls
+cd ..
+ls
+cd ronit/
+ls
+cd codecrafters-shell-c/
+ls
+cd src/
+ls
+cd ~
+ls
+cd Desktop/
+cd myShell-C/
+ls
+cd ~/Desktop/
+exit

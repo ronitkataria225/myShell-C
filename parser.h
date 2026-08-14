@@ -1,6 +1,6 @@
-#ifndef LEXER_H
-#define LEXER_H 
+#ifndef PARSER_H
+#define PARSER_H
 
-void lexer(char* input, struct command cmd);
+int parser(struct command* cmd, struct pipeline* pipe);
 
 #endif

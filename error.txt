@@ -1,0 +1,2 @@
+ls: cannot access 'aksdfhg': No such file or directory
+ls: cannot access '12334': No such file or directory
